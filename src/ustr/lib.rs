@@ -4,22 +4,17 @@
 #[feature(globs)];
 #[allow(dead_code)];
 
-extern mod encoding;
 extern mod extra;
 
 pub use ffi::*;
-use ffi::{ icuuc, icuio };
-use encoding::*;
+use ffi::{ icuuc };
 
-// use std::libc::{c_char, c_int, c_void};
-use std::ptr;
-use std::str::raw::{from_c_str};
+use std::fmt;
 
 mod ffi;
 
 pub struct UString {
   buf:  ~[UChar],      // UChar *ptr;
-  str:  ~str,
   busy: u8             // unsigned char busy;
 }
 
@@ -29,100 +24,116 @@ pub trait ToUString {
 
 impl<'a> ToUString for &'a str {
   fn to_u(&self) -> UString {
-    let mut buf = all::UTF_16LE.encode(self.to_owned(), EncodeReplace).unwrap();
+    let cap = self.len() * 2;
+    let mut buf: ~[UChar] = std::vec::from_elem(cap, 0u8);
 
-    UString { buf: buf, str: self.to_owned(), busy: 0 }
+    let mut pDestLength = 0;
+    let mut pNumSubstitutions: i32 = 0;
+    let mut pErrorCode = ZERO_ERROR;
+
+    unsafe {
+      icuuc::u_strFromUTF8WithSub_52(buf.as_mut_ptr(), 
+                                            buf.capacity() as i32, 
+                                            &mut pDestLength, 
+                                            self.as_bytes().as_ptr() as *i8,
+                                            self.len() as i32,
+                                            SENTINEL, 
+                                            &mut pNumSubstitutions, 
+                                            &mut pErrorCode);
+      buf.set_len(pDestLength as uint);
+    }
+    
+    UString { buf: buf, busy: 0 }
+  }
+}
+
+impl<'a> std::fmt::Show for &'a UString {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f.buf, "{}", self.to_str())
+  }
+}
+
+impl std::fmt::Show for UString {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f.buf, "{}", self.to_str())
+  }
+}
+
+impl std::fmt::Show for ~UString {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f.buf, "{}", self.to_str())
   }
 }
 
 impl UString {
   pub fn to_str(&self) -> ~str {
-    all::UTF_16LE.decode(self.buf, DecodeReplace).unwrap()
-  }
+    let mut buf: ~[u8] = std::vec::from_elem(self.buf.len() * 2, 0u8);
+    let mut pDestLength = 0;
+    let mut pNumSubstitutions: i32 = 0;
+    let mut pErrorCode = ZERO_ERROR;
 
-  pub fn from_utf8(s: &str) -> *UChar {
-    unsafe {
-      let cap = s.char_len() * 2;
-      let mut buf: ~[UChar] = std::vec::from_elem(cap, 0u8);// std::vec::with_capacity(cap);
-      let pDestLength: *mut i32 = &mut 0;
-      let pNumSubstitutions: *mut i32 = &mut 0;
-      let pErrorCode: *mut UErrorCode = &mut ZERO_ERROR;
-
-      let mut r = ptr::null();
-      println!("{:?}", cap);
-      
-      s.with_c_str(|c_str| {
-        r = icuuc::u_strFromUTF8WithSub_52(buf.as_mut_ptr(), cap as i32, pDestLength, c_str, -1, &SENTINEL, pErrorCode);   
-        println!("{} {} {:?}", *pDestLength, *pNumSubstitutions, *pErrorCode);
-        
-      });
-      
-
-      println!("{:?}", buf);
-      
-      r
+    unsafe {    
+      icuuc::u_strToUTF8WithSub_52(buf.as_mut_ptr() as *mut i8,
+                                   buf.capacity() as i32, 
+                                   &mut pDestLength,
+                                   self.buf.as_ptr(),
+                                   -1, // length, requires 0 termination of src
+                                   SENTINEL, 
+                                   &mut pNumSubstitutions, 
+                                   &mut pErrorCode);
+      buf.set_len(pDestLength as uint);
+      std::str::from_utf8_owned(buf).unwrap()
     }
   }
 
   pub fn new() -> UString {
-    UString { buf: ~[], str: ~"", busy: 0}
+    UString { buf: ~[], busy: 0}
+  }
+
+  //////////////////////////////////// PUBLIC API ////////////////////////////////////
+
+  // Returns a new copy of UString with all uppercase letters replaced with their uppercase counterparts.
+  pub fn upcase(&self) -> UString {
+    let mut buf: ~[UChar] = std::vec::from_elem(self.buf.capacity() + 1, 0u8);
+    let mut pDestLength = 0;
+    unsafe {
+      let mut pErrorCode = ZERO_ERROR;
+      let locale = std::ptr::null();
+
+      icuuc::u_strToUpper_52(buf.as_mut_ptr(),
+                             buf.capacity() as i32, 
+                             self.buf.as_ptr(), 
+                             self.buf.len() as i32,
+                             locale,
+                             &mut pErrorCode);
+
+      UString { buf: buf, busy: 0 }
+    }
+  }
+
+  // Returns a new copy of UString with all lowercase letters replaced with their uppercase counterparts.
+  pub fn downcase(&self) -> UString {
+    let mut buf: ~[UChar] = std::vec::from_elem(self.buf.capacity() + 1, 0u8);
+    let mut pDestLength = 0;
+
+    unsafe {
+      
+      let mut pErrorCode = ZERO_ERROR;
+      let locale = std::ptr::null();
+
+      icuuc::u_strToLower_52(buf.as_mut_ptr(),
+                             buf.capacity() as i32, 
+                             self.buf.as_ptr(), 
+                             self.buf.len() as i32,
+                             locale,
+                             &mut pErrorCode);
+    }
+
+    UString { buf: buf, busy: 0 }
   }
 
   pub fn length(&self) -> uint {
-    self.buf.len()
+    ffi::strlen(&self.buf) as uint
   }
-
-  pub fn strlen(&self) -> i32 {
-    unsafe {
-      icuuc::u_strlen_52(self.buf.as_ptr())
-    }
-  }
-
-  pub fn printf(&self) {
-    unsafe {
-      icuio::u_printf_u_52(self.buf.as_ptr());
-    }
-  }
-
-  fn error_name(code: UErrorCode) -> ~str {
-    unsafe {
-      std::str::raw::from_c_str(icuuc::u_errorName_52(code) as *i8)
-    }
-  }
-
-  fn success(code: UErrorCode) -> bool {
-    code == ZERO_ERROR
-  }
-
-  fn failure(code: UErrorCode) -> bool {
-    code != ZERO_ERROR
-  }
-
-  pub fn upcase(&self) -> UString {
-    println!("upcase {}", self.length());
-
-    unsafe {
-      let mut buf: ~[UChar] = std::vec::from_elem(self.length() + 1, 0u8); //std::vec::with_capacity(self.length() + 1);
-      let error_code : *mut UErrorCode = &mut ZERO_ERROR;
-      let locale = std::ptr::null();
-      let i = icuuc::u_strToUpper_52(buf.as_mut_ptr(), buf.capacity() as i32, self.buf.as_ptr(), self.length() as i32, locale, error_code);
-
-      if UString::failure(*error_code) {
-        fail!(UString::error_name(*error_code))
-      }
-
-      println!("{} |{:?}| {}", i, buf, buf.capacity());
-      
-      // UString { ptr: buf.as_ptr() as *UChar, capa: self.len, len: self.len, busy: 0 }
-      UString::new()
-    } 
-  }
-
-  // #[inline]
-  // fn reserve_exact(&mut self, n: uint) {
-    // unsafe {
-      // raw::as_owned_vec(self).reserve_exact(n)
-    // }
-  // }
 }
 
