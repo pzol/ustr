@@ -66,7 +66,20 @@ mod icuuc {
       pub fn u_strcat_52(dest: *mut UChar, src: *UChar) -> *mut UChar;
 
       pub fn u_strtok_r_52(src: *mut UChar, delim: *UChar, saveState: *mut *mut UChar) -> *UChar;
+
+      pub fn u_tolower_52(c: UChar32) -> UChar32;
+      pub fn u_toupper_52(c: UChar32) -> UChar32;
   }
+}
+
+#[inline]
+pub fn to_upper(c: UChar32) -> UChar32 {
+  unsafe { icuuc::u_toupper_52(c) }
+}
+
+#[inline]
+pub fn to_lower(c: UChar32) -> UChar32 {
+  unsafe { icuuc::u_tolower_52(c) }
 }
 
 // Adapters to the ICUUC versions, in case their signature changes. Also to hide the u_.*_52 and unsafe calls

@@ -51,7 +51,7 @@ fn test_fmt(){
 #[test]
 fn test_upcase(){
   let u = "Föobär".to_u();
-  assert_eq!(u.upcase().to_str(), ~"FÖOBÄR")
+  assert_eq!(u.upcase().to_str(), ~"FÖOBÄR");
 }
 
 #[test]

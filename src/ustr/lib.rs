@@ -147,39 +147,19 @@ impl UString {
     self.concat(&other.to_u())
   }
 
+  pub fn chars<'a>(&'a self) -> vec::Items<'a, UChar> {
+    self.buf.iter()
+  }
+
   // Returns a new copy of UString with all uppercase letters replaced with their uppercase counterparts.
   pub fn upcase(&self) -> UString {
-    let mut buf: ~[UChar] = vec::from_elem(self.buf.len() + 1, 0u16);
-    let dummy = 0;
-    let mut error_code = ZERO_ERROR;
-    
-    ffi::strToUpper(buf.as_mut_ptr(),
-                    buf.capacity() as i32, 
-                    self.buf.as_ptr(), 
-                    self.buf.len() as i32,
-                    UString::null_locale(),
-                    &mut error_code);
-
-    assert!(success(error_code), ffi::error_name(error_code));
-    unsafe { buf.set_len(self.buf.len()) };
+    let buf = self.buf.map(|c| ffi::to_upper(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
   // Returns a new copy of UString with all lowercase letters replaced with their uppercase counterparts.
   pub fn downcase(&self) -> UString {
-    let mut buf: ~[UChar] = vec::from_elem(self.buf.len() + 1, 0u16);
-    let dummy = 0;
-    let mut error_code = ZERO_ERROR;
-
-    ffi::strToLower(buf.as_mut_ptr(),
-                    buf.capacity() as i32, 
-                    self.buf.as_ptr(), 
-                    self.buf.len() as i32,
-                    UString::null_locale(),
-                    &mut error_code);
-
-    assert!(success(error_code), ffi::error_name(error_code));
-    unsafe { buf.set_len(self.buf.len()) };
+    let buf = self.buf.map(|c| ffi::to_lower(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
