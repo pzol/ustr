@@ -117,7 +117,6 @@ impl UString {
   pub fn from_bytes(src: *UChar) -> UString {
     let len = ffi::strlen(src);
     let buf = unsafe { vec::raw::from_buf_raw(src, len as uint) };
-    println!("from_bytes {}:{:?} ", len, buf);
     
     UString { buf: buf }
   }
@@ -204,21 +203,20 @@ impl UString {
 
   pub fn split(&self, delim: UString) -> ~[UString] {
     let mut src = self.buf.clone();
+    src.push(0u16); // add explicit \0 terminator for the string
     let saveState: *mut *mut UChar = &mut src.as_mut_ptr();
-    let dummy = 0;
     let mut words = ~[];
     let mut token = ffi::strtok_r(src.as_mut_ptr(), delim.as_ptr(), saveState);
-    let i = 0;
+    let mut i = 0;
 
     while token != ptr::null() {
       i = i + 1;
-      println!("i {}", i);
       
-      words.push(token);
-      token = ffi::strtok_r(ptr::mut_null(), delim.buf.as_ptr(), saveState);
+      words.push(UString::from_bytes(token));
+      token = ffi::strtok_r(ptr::mut_null(), delim.as_ptr(), saveState);
     }
 
-    words.map(|word| UString::from_bytes(*word))
+    words
   }
 
   pub fn length(&self) -> uint {

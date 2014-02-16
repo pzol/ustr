@@ -24,8 +24,6 @@ fn test_length(){
   assert_eq!(u.length(), 6);
 
   let u = "".to_u();
-  println!("{:?}", u.inspect());
-  
   assert_eq!(u.length(), 0);
 }
 
@@ -85,7 +83,6 @@ fn test_from_bytes(){
 fn test_add(){
   let u1 = "foo".to_u();
   let u2 = "bar".to_u();
-  println!("{}", u1.inspect());
   
   let combined = u1 + u2;
   assert_eq!(combined.to_str(), ~"foobar");
@@ -95,14 +92,19 @@ fn test_add(){
 fn test_split(){
   let u = "foo bar".to_u();
   let words = u.split(" ".to_u());
-
-  println!("{:?}", words);
-  for word in words.iter() {
-    println!("{}", word.inspect());
-    
-  }
-  
   assert_eq!(words, ~["foo".to_u(), "bar".to_u()]);
+
+  let u = "In a hill, there lives:   a hobbit".to_u();
+  let words = u.split(" ,:".to_u());
+  assert_eq!(words, (~["In", "a", "hill", "there", "lives", "a", "hobbit"]).map(|w| w.to_u()));
+}
+
+#[test]
+fn test_split_empty(){
+  let u = "".to_u();
+  let words = u.split(" ".to_u());
+
+  assert_eq!(words, ~[]);
 }
 
 #[test]
@@ -116,7 +118,6 @@ fn test_join(){
 fn test_join_empty(){
   let words: ~[UString] = ~[];
   let u = words.join(&" ".to_u());
-  println!("{:?}", u.inspect());
   
   assert_eq!(u.to_str(), ~"");
 }
