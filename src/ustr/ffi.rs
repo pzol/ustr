@@ -2,10 +2,10 @@
 #[feature(globs)];
 
 use std::str;
+use std::libc::{ c_char };
 
-pub type UBool     = u8;
-pub type UProperty = int;
-pub type UChar     = u8;
+
+pub type UChar     = u16;
 pub type UChar32   = i32;
 
 #[deriving(Eq)]
@@ -14,12 +14,22 @@ pub enum UErrorCode {
   BUFFER_OVERFLOW_ERROR = 15
 }
 
+pub struct UBreakIterator;
+
+pub enum UBreakIteratorType {
+  UBRK_CHARACTER,
+  UBRK_WORD,
+  UBRK_LINE,
+  UBRK_SENTENCE,
+  UBRK_TITLE
+}
+
 pub static TRUE: u8  = 1u8;
 pub static FALSE: u8 = 0u8;
 
 pub static SENTINEL: UChar32 = -1; 
 
-pub mod icuio {
+mod icuio {
   use super::*;
 
   #[link(name = "icuio")]
@@ -28,109 +38,114 @@ pub mod icuio {
   }
 }
 
-pub mod icuuc {
+mod icui18n {
+  use super::*;
+
+  struct URegularExpression;
+
+  #[link(name = "icui18n")]
+  extern "C" {
+    pub fn uregex_split_52(regexp: *URegularExpression, destBuf: *mut UChar, destCapacity: i32, requiredCapacity: *i32, destFields: &[*UChar], destFieldsCapacity: i32, status: *mut UErrorCode) -> i32;
+  }
+}
+
+mod icuuc {
   use super::*;
   use std::libc::{ c_char };
 
   #[link(name = "icuuc")]
   extern "C" {
+      // http://icu-project.org/apiref/icu4c/ustring_8h.html
       pub fn u_strToUpper_52(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32;
       pub fn u_strToLower_52(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32;
       pub fn u_strlen_52(s: *UChar) -> i32;
       pub fn u_errorName_52(code: i32) -> *char;
-      // http://icu-project.org/apiref/icu4c/ustring_8h.html#a0e9b7cd493c351804322ad1805fbe775
       pub fn u_strFromUTF8WithSub_52(dest: *mut UChar, destCapacity: i32, pDestLength: *mut i32, src: *c_char, srcLength: i32, subChar: UChar32, pNumSubstitutions: *mut i32, pErrorCode: *mut UErrorCode) -> *mut UChar;
       pub fn u_strToUTF8WithSub_52(dest: *mut c_char, destCapacity: i32, pDestLength: *mut i32, src: *UChar, srcLength: i32, subChar: UChar32, pNumSubstitutions: *mut i32, pErrorCode: *mut UErrorCode) -> *mut UChar;
+      pub fn u_strToTitle_52(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, titleIter: *UBreakIterator, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32;
+      pub fn u_strcat_52(dest: *mut UChar, src: *UChar) -> *mut UChar;
+
+      pub fn u_strtok_r_52(src: *mut UChar, delim: *UChar, saveState: *mut *mut UChar) -> *UChar;
   }
 }
 
-pub fn strlen(buf: &~[UChar]) -> i32 {
+// Adapters to the ICUUC versions, in case their signature changes. Also to hide the u_.*_52 and unsafe calls
+#[inline]
+pub fn strtok_r(src: *mut UChar, delim: *UChar, saveState: *mut *mut UChar) -> *UChar {
   unsafe {
-    icuuc::u_strlen_52(buf.as_ptr())
+    icuuc::u_strtok_r_52(src, delim, saveState)
   }
 }
 
+#[inline]
+pub fn strFromUTF8WithSub(dest: *mut UChar, destCapacity: i32, pDestLength: *mut i32, src: *c_char, srcLength: i32, subChar: UChar32, pNumSubstitutions: *mut i32, pErrorCode: *mut UErrorCode) -> *mut UChar {
+  unsafe {
+    icuuc::u_strFromUTF8WithSub_52(dest, destCapacity, pDestLength, src, srcLength, subChar, pNumSubstitutions, pErrorCode)
+  }
+}
+
+#[inline]
+pub fn strToUTF8WithSub(dest: *mut c_char, destCapacity: i32, pDestLength: *mut i32, src: *UChar, srcLength: i32, subChar: UChar32, pNumSubstitutions: *mut i32, pErrorCode: *mut UErrorCode) -> *mut UChar {
+  unsafe {
+    icuuc::u_strToUTF8WithSub_52(dest, destCapacity, pDestLength, src, srcLength, subChar, pNumSubstitutions, pErrorCode)
+  }
+}
+
+#[inline]
+pub fn strToLower(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32 {
+  unsafe {
+    icuuc::u_strToLower_52(dest, destCapacity, src, srcLength, locale, pErrorCode)
+  }
+}
+
+#[inline]
+pub fn strToUpper(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32 {
+  unsafe {
+    icuuc::u_strToUpper_52(dest, destCapacity, src, srcLength, locale, pErrorCode)
+  }
+}
+
+#[inline]
+pub fn strcat(dest: *mut UChar, src: *UChar) -> *mut UChar {
+  unsafe {
+    icuuc::u_strcat_52(dest, src)
+  }
+}
+
+#[inline]
+pub fn strToTitle(dest: *mut UChar, destCapacity: i32, src: *UChar, srcLength: i32, titleIter: *UBreakIterator, locale: *c_char, pErrorCode: *mut UErrorCode) -> i32 {
+  unsafe {
+    icuuc::u_strToTitle_52(dest, destCapacity, src, srcLength, titleIter, locale, pErrorCode)
+  }
+}
+
+#[inline]
+pub fn strlen(buf: *UChar) -> i32 {
+  unsafe {
+    icuuc::u_strlen_52(buf)
+  }
+}
+
+#[inline]
 pub fn error_name(code: UErrorCode) -> ~str {
   unsafe {
     str::raw::from_c_str(icuuc::u_errorName_52(code as i32) as *i8)
   }
 }
 
+#[inline]
 pub fn success(code: UErrorCode) -> bool {
   code == ZERO_ERROR
 }
 
+#[inline]
 pub fn failure(code: UErrorCode) -> bool {
   code != ZERO_ERROR
 }
 
-fn printf(buf: ~[UChar]) {
+#[inline]
+pub fn printf(buf: *UChar) {
   unsafe {
-    icuio::u_printf_u_52(buf.as_ptr());
-  }
-}
-
-#[cfg(test)]
-mod test {
-  use super::*;
-  use std::vec;
-  use std::str;
-
-  #[test]
-  fn test_u_strFromUTF8WithSub_52(){
-
-      let src = "föobär";
-      let cap = src.len() * 2;
-      let mut buf: ~[UChar] = vec::from_elem(cap, 0u8);
-
-      let mut pDestLength = 0;
-      let mut pNumSubstitutions: i32 = 0;
-      let mut pErrorCode = ZERO_ERROR;
-
-      unsafe {
-        icuuc::u_strFromUTF8WithSub_52(buf.as_mut_ptr(), 
-                                       buf.capacity() as i32, 
-                                       &mut pDestLength, 
-                                       src.as_bytes().as_ptr() as *i8,
-                                       src.len() as i32,
-                                       SENTINEL, 
-                                       &mut pNumSubstitutions, 
-                                       &mut pErrorCode);   
-
-        let expected = ~[102u8, 0u8, 246u8, 0u8, 111u8, 0u8, 98u8, 0u8, 228u8, 0u8, 114u8, 0u8, 0u8, 0u8, 0u8, 0u8];
-
-        assert_eq!(pDestLength, 6);
-        assert_eq!(pNumSubstitutions, 0);
-        assert_eq!(pErrorCode, ZERO_ERROR);
-        assert_eq!(buf, expected);
-        
-      }
-  }
-
-  #[test]
-  fn test_u_strToUTF8WithSub_52(){
-    let src: ~[UChar] = ~[102u8, 0u8, 246u8, 0u8, 111u8, 0u8, 98u8, 0u8, 228u8, 0u8, 114u8, 0u8, 0u8, 0u8];
-    let mut buf: ~[u8] = vec::from_elem(src.len() * 2, 0u8);
-    let mut pDestLength = 0;
-    let mut pNumSubstitutions: i32 = 0;
-    let mut pErrorCode = ZERO_ERROR;
-
-    unsafe {    
-      icuio::u_printf_u_52(src.as_ptr());
-
-      icuuc::u_strToUTF8WithSub_52(buf.as_mut_ptr() as *mut i8,
-                                    buf.capacity() as i32, 
-                                    &mut pDestLength,
-                                    src.as_ptr(),
-                                    -1, // length, requires 0 termination of src
-                                    SENTINEL, 
-                                    &mut pNumSubstitutions, 
-                                    &mut pErrorCode);  
-
-      let expected = ~"föobär";
-      buf.set_len(pDestLength as uint);
-      let dest = str::from_utf8_owned(buf).unwrap();
-      assert_eq!(dest.to_owned(), expected);
-    }
+    icuio::u_printf_u_52(buf);
   }
 }
