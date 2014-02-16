@@ -153,7 +153,7 @@ impl UString {
 
   // Returns a new copy of UString with all uppercase letters replaced with their uppercase counterparts.
   pub fn upcase(&self) -> UString {
-    let buf = self.buf.map(|c| ffi::to_upper(*c as UChar32) as UChar);
+    let buf = self.chars().map(|c| ffi::to_upper(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
