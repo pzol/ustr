@@ -19,12 +19,12 @@ fn test_to_str_empty(){
 }
 
 #[test]
-fn test_length(){
+fn test_len(){
   let u = "föobär".to_u();
-  assert_eq!(u.length(), 6);
+  assert_eq!(u.len(), 6);
 
   let u = "".to_u();
-  assert_eq!(u.length(), 0);
+  assert_eq!(u.len(), 0);
 }
 
 #[test]
@@ -85,6 +85,16 @@ fn test_add(){
   let u2 = "bar".to_u();
   
   let combined = u1 + u2;
+  assert_eq!(combined.to_str(), ~"foobar");
+}
+
+
+#[test]
+fn test_concat(){
+  let u1 = "foo".to_u();
+  let u2 = "bar".to_u();
+  
+  let combined = u1.concat(&u2);
   assert_eq!(combined.to_str(), ~"foobar");
 }
 

@@ -81,10 +81,7 @@ impl fmt::Show for UString {
 
 impl Add<UString, UString> for UString {
     fn add(&self, other: &UString) -> UString {
-      let mut buf = self.buf + other.buf;
-      buf.push(0u16);
-      unsafe { buf.set_len(self.buf.len() + other.buf.len())}
-      UString { buf: buf }
+      self.concat(other)
     }
 }
 
@@ -135,12 +132,7 @@ impl UString {
   }
 
   pub fn concat(&self, other: &UString) -> UString {
-    let mut buf = self.buf.clone();
-    buf.grow(other.buf.len(), &0u16);
-
-    ffi::strcat(buf.as_mut_ptr(), other.as_ptr());
-
-    UString { buf: buf }
+    UString { buf: self.buf + other.buf }
   }
 
   pub fn concat_str(&self, other: &str) -> UString {
@@ -153,7 +145,7 @@ impl UString {
 
   // Returns a new copy of UString with all uppercase letters replaced with their uppercase counterparts.
   pub fn upcase(&self) -> UString {
-    let buf = self.chars().map(|c| ffi::to_upper(*c as UChar32) as UChar);
+    let buf = self.buf.map(|c| ffi::to_upper(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
@@ -182,24 +174,28 @@ impl UString {
   }
 
   pub fn split(&self, delim: UString) -> ~[UString] {
-    let mut src = self.buf.clone();
-    src.push(0u16); // add explicit \0 terminator for the string
-    let saveState: *mut *mut UChar = &mut src.as_mut_ptr();
     let mut words = ~[];
-    let mut token = ffi::strtok_r(src.as_mut_ptr(), delim.as_ptr(), saveState);
-    let mut i = 0;
+    let mut word  = ~[];
 
-    while token != ptr::null() {
-      i = i + 1;
-      
-      words.push(UString::from_bytes(token));
-      token = ffi::strtok_r(ptr::mut_null(), delim.as_ptr(), saveState);
+    for c in self.buf.iter() {
+      if delim.buf.contains(c) {
+        if word.len() > 0 {
+          words.push(UString { buf: word.clone() });
+          word = ~[];
+        }
+      } else {
+        word.push(*c);
+      }
+    }
+
+    if word.len() > 0 {
+      words.push(UString { buf: word });
     }
 
     words
   }
 
-  pub fn length(&self) -> uint {
+  pub fn len(&self) -> uint {
     self.buf.len()
   }
 
