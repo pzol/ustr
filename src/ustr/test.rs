@@ -1,6 +1,6 @@
 #[feature(globs)];
 
-extern mod ustr;
+extern crate ustr;
 
 use ustr::*;
 
@@ -17,6 +17,21 @@ fn test_to_str_empty(){
   let u = "".to_u();
   assert_eq!(u.to_str(), ~"");
 }
+
+#[test]
+fn test_is_empty(){
+  let u = "".to_u();
+  assert!(u.is_empty());
+
+  let u = "foo".to_u();
+  assert!(!u.is_empty());
+}
+
+// #[test]
+// fn test_contains(){
+//   let u = "foobar".to_u();
+//   assert!(u.contains("ob".to_u()));
+// }
 
 #[test]
 fn test_len(){
@@ -49,21 +64,27 @@ fn test_fmt(){
 }
 
 #[test]
-fn test_upcase(){
+fn test_to_upper(){
   let u = "Föobär".to_u();
-  assert_eq!(u.upcase().to_str(), ~"FÖOBÄR");
+  assert_eq!(u.to_upper().to_str(), ~"FÖOBÄR");
 }
 
 #[test]
-fn test_downcase(){
+fn test_to_lower(){
   let u = "FÖOBÄR".to_u();
-  assert_eq!(u.downcase().to_str(), ~"föobär")
+  assert_eq!(u.to_lower().to_str(), ~"föobär")
 }
 
 #[test]
-fn test_titleize(){
+fn test_to_title(){
   let u = "In a hill there lives a hobbit".to_u();
-  assert_eq!(u.titleize().to_str(), ~"In A Hill There Lives A Hobbit");
+  assert_eq!(u.to_title().to_str(), ~"In A Hill There Lives A Hobbit");
+}
+
+#[test]
+fn test_to_capital(){
+  let u = "biLBo".to_u();
+  assert_eq!(u.to_capital().to_str(), ~"Bilbo");
 }
 
 #[test]
@@ -130,4 +151,33 @@ fn test_join_empty(){
   let u = words.join(&" ".to_u());
   
   assert_eq!(u.to_str(), ~"");
+}
+
+#[test]
+fn test_start_with(){
+  let u = "foobar".to_u();
+  assert!(u.starts_with(&"foo".to_u()));
+}
+
+#[test]
+fn test_ends_with(){
+  let u = "foobar".to_u();
+  assert!(u.ends_with(&"bar".to_u()));
+}
+
+#[test]
+fn test_slice_len(){
+  let u = "foobar".to_u();
+  assert_eq!(u.slice_len(0, 3), "foo".to_u());
+  assert_eq!(u.slice_len(3, 99), "bar".to_u());
+}
+
+#[test]
+fn test_slice(){
+  let u = "föobar".to_u();
+  assert_eq!(u.slice(0, 2),    "föo".to_u());
+  assert_eq!(u.slice(3, 2),    "".to_u());
+  assert_eq!(u.slice(3, 99),   "bar".to_u());
+  assert_eq!(u.slice(-3, -1),  "bar".to_u());
+  assert_eq!(u.slice(-99, -1), "föobar".to_u());
 }

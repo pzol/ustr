@@ -4,7 +4,7 @@
 #[feature(globs)];
 #[allow(dead_code)];
 
-extern mod extra;
+extern crate extra;
 
 pub use ffi::*;
 use std::{ fmt, ptr, vec, str };
@@ -15,7 +15,7 @@ pub struct UString {
   buf:  ~[UChar]      // UChar *ptr;
 }
 
-  //////////////////////////////////// Traits ////////////////////////////////////
+//////////////////////////////////// Traits ////////////////////////////////////
 
 pub trait ToUString {
   fn to_u(&self) -> UString;
@@ -43,6 +43,8 @@ impl UJoin for ~[UString] {
   }
 }
 
+/// Convert a `~str` to a UString
+///     ~"foobar".to_u()
 impl<'a> ToUString for &'a str {
   fn to_u(&self) -> UString {
     if self.len() == 0 {
@@ -86,6 +88,9 @@ impl Add<UString, UString> for UString {
 }
 
 impl ToStr for UString {
+  /// Convert a UString to a `~str`
+  /// 
+  ///     "foobar".to_u().to_str()
   fn to_str(&self) -> ~str {
     let mut buf: ~[u8] = vec::from_elem(self.strlen() * 2, 0u8);
     let mut pDestLength = 0;
@@ -118,11 +123,13 @@ impl UString {
     UString { buf: buf }
   }
 
+  #[inline]
   pub fn as_ptr(&self) -> *UChar {
     self.buf.as_ptr()
   } 
 
   //////////////////////////////////// PUBLIC API ////////////////////////////////////
+  /// Return a string representation of an UString for debugging
   pub fn inspect(&self) -> ~str {
     format!("UString \\{\"{:s}\", buf: {:?}\\}", self.to_str(), self.buf)
   }
@@ -139,23 +146,40 @@ impl UString {
     self.concat(&other.to_u())
   }
 
+  // pub fn contains(&self, other: &UString) -> bool {
+  //   true
+  // }
+
+  /// Returns true if the string is empty
+  pub fn is_empty(&self) -> bool {
+    self.buf.is_empty()
+  }
+
   pub fn chars<'a>(&'a self) -> vec::Items<'a, UChar> {
     self.buf.iter()
   }
 
-  // Returns a new copy of UString with all uppercase letters replaced with their uppercase counterparts.
-  pub fn upcase(&self) -> UString {
+  /// Returns a new copy of UString with the first letters upper case, all the rest lower case.
+  pub fn to_capital(&self) -> UString {
+    let mut buf = self.to_lower().buf;
+    buf[0] = ffi::to_upper(buf[0] as i32) as UChar;
+    UString { buf: buf }
+  }
+
+  /// Returns a new copy of UString with all upper case letters replaced with their uppercase counterparts.
+  pub fn to_upper(&self) -> UString {
     let buf = self.buf.map(|c| ffi::to_upper(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
-  // Returns a new copy of UString with all lowercase letters replaced with their uppercase counterparts.
-  pub fn downcase(&self) -> UString {
+  /// Returns a new copy of UString with all lower case letters replaced with their uppercase counterparts.
+  pub fn to_lower(&self) -> UString {
     let buf = self.buf.map(|c| ffi::to_lower(*c as UChar32) as UChar);
     UString { buf: buf }
   }
 
-  pub fn titleize(&self) -> UString {
+  /// Returns a new copy of UString with all first letters of a word in upper case, all others lower case.
+  pub fn to_title(&self) -> UString {
     let mut buf: ~[UChar] = vec::from_elem(self.buf.len() + 1, 0u16);
     let dummy = 0;
     let mut error_code = ZERO_ERROR;
@@ -195,6 +219,52 @@ impl UString {
     words
   }
 
+  /// Returns true if the UString starts with the given prefix
+  pub fn starts_with(&self, prefix: &UString) -> bool {
+    self.buf.starts_with(prefix.buf)
+  }
+
+  /// Returns true if the UString ends with the given suffix
+  pub fn ends_with(&self, suffix: &UString) -> bool {
+    self.buf.ends_with(suffix.buf)
+  }
+
+  /// Returns a new UString from position start with the given length.
+  pub fn slice_len(&self, start: uint, length: uint) -> UString {
+    let it  = self.buf.iter().skip(start).take(length);
+    let buf = it.map(|e| e.clone()).to_owned_vec();
+    UString { buf: buf }
+  }
+
+  fn slice_pos(&self, pos: int, len: uint) -> uint {
+    let ilen = len as int;
+    let result = match pos {
+          p if p < 0 && ilen + p < 0 => 0,
+          p if p < 0                => ilen + p,
+          p                         => p
+    } as uint;
+    result
+  }
+
+  /// Return a new UString containing the chars from start to end. The first char is 0.
+  /// Negative start or end mean the position from the end of the string, -1 is the last character
+  /// examples:
+  ///
+  ///     "foobar".to_u().slice(0, 2)   // => "foo"  
+  ///     "foobar".to_u().slice(-3, -1) // => "bar"
+  ///
+  /// Out of bounds positions will use the start or end respectively and yield no error.
+  pub fn slice(&self, start: int, end: int) -> UString {
+    let rstart = self.slice_pos(start, self.len());
+    let rend   = self.slice_pos(end, self.len());
+
+    let mut pos = rstart;
+    let it  = self.buf.iter().skip(rstart).take_while(|_| { pos = pos + 1; pos -1 <= rend } );
+    let buf = it.map(|e| e.clone()).to_owned_vec();
+    UString { buf: buf }
+  }
+
+  /// Returns the length (of UTF16 chars)
   pub fn len(&self) -> uint {
     self.buf.len()
   }
