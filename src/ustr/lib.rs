@@ -270,6 +270,16 @@ impl UString {
     self.buf.len()
   }
 
+  /// Convert to int
+  pub fn to_i(&self) -> int {
+    from_str(self.to_str()).unwrap_or(0)
+  }
+
+  /// Convert to f32
+  pub fn to_f(&self) -> f32 {
+    from_str(self.to_str()).unwrap_or(0f32)
+  }
+
   fn null_locale() -> *i8 { 
     "".as_bytes().as_ptr() as *i8
   }
