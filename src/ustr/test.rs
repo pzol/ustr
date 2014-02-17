@@ -27,12 +27,6 @@ fn test_is_empty(){
   assert!(!u.is_empty());
 }
 
-// #[test]
-// fn test_contains(){
-//   let u = "foobar".to_u();
-//   assert!(u.contains("ob".to_u()));
-// }
-
 #[test]
 fn test_len(){
   let u = "föobär".to_u();
@@ -54,6 +48,9 @@ fn test_from_utf8(){
   let s = "föobär";
   let u = s.to_u();
   assert_eq!(u.to_str(), s.to_owned());
+
+  let e = "Hello, 世界!";
+  assert_eq!(e.to_u().to_str(), e.to_owned());
 }
 
 #[test]
@@ -67,6 +64,9 @@ fn test_fmt(){
 fn test_to_upper(){
   let u = "Föobär".to_u();
   assert_eq!(u.to_upper().to_str(), ~"FÖOBÄR");
+
+  let e = "łódź".to_u();
+  assert_eq!(e.to_upper().to_str(), ~"ŁÓDŹ");
 }
 
 #[test]
@@ -134,7 +134,6 @@ fn test_split(){
 fn test_split_empty(){
   let u = "".to_u();
   let words = u.split(" ".to_u());
-
   assert_eq!(words, ~[]);
 }
 
@@ -149,7 +148,6 @@ fn test_join(){
 fn test_join_empty(){
   let words: ~[UString] = ~[];
   let u = words.join(&" ".to_u());
-  
   assert_eq!(u.to_str(), ~"");
 }
 
@@ -157,12 +155,14 @@ fn test_join_empty(){
 fn test_start_with(){
   let u = "foobar".to_u();
   assert!(u.starts_with(&"foo".to_u()));
+  assert!(!u.starts_with(&"bar".to_u()));
 }
 
 #[test]
 fn test_ends_with(){
   let u = "foobar".to_u();
   assert!(u.ends_with(&"bar".to_u()));
+  assert!(!u.ends_with(&"foo".to_u()));
 }
 
 #[test]
@@ -180,4 +180,22 @@ fn test_slice(){
   assert_eq!(u.slice(3, 99),   "bar".to_u());
   assert_eq!(u.slice(-3, -1),  "bar".to_u());
   assert_eq!(u.slice(-99, -1), "föobar".to_u());
+}
+
+#[test]
+fn test_to_i(){
+  assert_eq!("1".to_u().to_i(), 1);
+  assert_eq!("x".to_u().to_i(), 0);
+}
+
+#[test]
+fn test_to_f(){
+  assert_eq!("1.2".to_u().to_f(), 1.2f32);
+  assert_eq!("x".to_u().to_f(), 0f32);
+}
+
+#[test]
+fn test_to_owned(){
+  let u = &"föobär".to_u();
+  assert_eq!("föobär".to_u(), u.to_owned());
 }
