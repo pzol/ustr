@@ -7,13 +7,13 @@ In the future regex handling will also come from libicu. The rest of the methods
 UStrings are immutable, each action creates a copy currently. Clojure like persistence would be nice for the future or copy on write? 
 
 
-## Creating a UString
+### Creating a UString
 ```rust
 let u = "föobär".to_u();
 let poo = "💩".to_u()
 ```
 
-## Back to String
+### Back to String
 
 ```rust
 let u = "föobär".to_u();
@@ -22,7 +22,7 @@ let y = (&u).to_owned();  // ~"föobär"
 
 ```
 
-## Using in format!, println!
+### Using in format!, println!
 
 ```rust
 let u = "föobär".to_u();
@@ -31,7 +31,7 @@ let s = format!("{}", u); // ~"föobär"
 println!("{}", u);        // just works
 ```
 
-## Case Conversions
+### Case Conversions
 
 ```rust
 // to upper case
@@ -48,13 +48,13 @@ let u = "In a hill there lives a hobbit".to_u().to_title(); // ~"In A Hill There
 let u = "biLBo".to_u().to_capital(); // ~"Bilbo"
 ```
 
-## Debug a UString
+### Debug a UString
 ```rust
 let u = "foo".to_u().inspect();      // ~"UString {\"foo\", buf: ~[102u16, 111u16, 111u16]}"
 ```
 
 
-## Adding 
+### Adding 
 ```rust
 let u1 = "foo".to_u();
 let u2 = "bar".to_u();
@@ -63,7 +63,7 @@ let combined = u1 + u2;              // ~"foobar"
 let combined = u1.concat(&u2);       // ~"foobar"
 ```
 
-## Splitting
+### Splitting
 ```rust
 let u = "foo bar".to_u();
 let words = u.split(" ".to_u());     // ~["foo".to_u(), "bar".to_u()]);
@@ -72,19 +72,19 @@ let u = "In a hill, there lives:   a hobbit".to_u();
 let words = u.split(" ,:".to_u());   // ~["In", "a", "hill", "there", "lives", "a", "hobbit"])
 ```
 
-## Join
+### Join
 ```rust
 let words = ~["foo".to_u(), "bar".to_u()];
 let u = words.join(&", ".to_u());     // ~"foo, bar")
 ```
 
-## Starts_with, Ends_with
+### Starts_with, Ends_with
 
 ```rust
 "foobar".to_u().starts_with(&"foo".to_u()); // true
 "foobar".to_u().ends_with(&"bar".to_u());   // true
 
-## Slicing
+### Slicing
 // with len
 let u = "foobar".to_u();
 u.slice_len(0, 3)               // "foo".to_u()
@@ -102,7 +102,7 @@ u.slice(-99, -1)                // "föobar".to_u()
 ```
 
 
-## To int, float
+### To int, float
 ```rust
 "1".to_u().to_i()                // 1
 "x".to_u().to_i()                // 0
