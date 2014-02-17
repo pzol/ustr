@@ -138,6 +138,7 @@ impl UString {
     UString { buf: self.buf.to_owned() }
   }
 
+  /// Return a new string with both of them concatenated
   pub fn concat(&self, other: &UString) -> UString {
     UString { buf: self.buf + other.buf }
   }
