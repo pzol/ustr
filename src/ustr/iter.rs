@@ -116,11 +116,6 @@ impl<'a> Iterator<Match> for Splits<'a> {
         self.finished = true; 
         break;
       } else {
-
-        // while (self.break_pred)(&self.slice) {
-        //   self.pos   = self.pos + 1;
-        //   self.slice = self.slice.slice_from(1);     
-        // }
         if (self.break_pred)(&self.slice) {
           if word.is_empty() {
             self.pos   = self.pos + 1;
