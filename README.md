@@ -4,8 +4,11 @@ This lib is designed for developer happiness. If you don't won't to know about U
 UString depends on libicu for the conversion between UTF8 and UTF16 and also for converting to upper, lower case.
 In the future regex handling will also come from libicu. The rest of the methods are implemented in Rust for more developer happiness.
 
-UStrings are immutable, each action creates a copy currently. Clojure like persistence would be nice for the future or copy on write? 
+UStrings are immutable, each action creates a copy currently. 
 
+## TODO
+- MH regex
+- CH persistent strings a la clojure or copy on write
 
 ### Creating a UString
 ```rust
