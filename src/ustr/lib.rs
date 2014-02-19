@@ -9,6 +9,7 @@ extern crate extra;
 pub use ffi::*;
 use std::{ fmt, ptr, vec, str };
 mod ffi;
+mod regex;
 
 #[deriving(Eq, Clone)]
 pub struct UString {
@@ -182,7 +183,6 @@ impl UString {
   /// Returns a new copy of UString with all first letters of a word in upper case, all others lower case.
   pub fn to_title(&self) -> UString {
     let mut buf: ~[UChar] = vec::from_elem(self.buf.len() + 1, 0u16);
-    let dummy = 0;
     let mut error_code = ZERO_ERROR;
 
     ffi::strToTitle(buf.as_mut_ptr(),
