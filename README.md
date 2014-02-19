@@ -10,6 +10,28 @@ UStrings are immutable, each action creates a copy currently.
 - MH regex
 - CH persistent strings a la clojure or copy on write
 
+## Installing Dependencies
+You DO need libicu 5.2
+
+Ubuntu Trusty
+
+```shell
+# trusty
+sudo apt-get install libicu52
+```
+
+OSX
+
+```shell
+brew install icu4c
+```
+
+For other install options see the [ICU 52 Download Page](http://site.icu-project.org/download/52)
+
+ICU's [licence](http://source.icu-project.org/repos/icu/icu/trunk/license.html) is GNU compatible.
+
+## UString
+
 ### Creating a UString
 ```rust
 let u = "föobär".to_u();
@@ -112,4 +134,19 @@ u.slice(-99, -1)                // "föobar".to_u()
 
 "1.2".to_u().to_f()             // 1.2f32
 "x".to_u().to_f()               // 0f32
+```
+
+## Regular Expressions
+
+## matches
+matches must cover the whole string!
+
+```rust
+// UString
+"foobar".to_u().matches("^foo.*$".to_u())    // Ok(true)
+"foobar".to_u().matches_str("^foo.*$")       // Ok(true)
+
+// &str
+"foobar".matches(& &"^foo.*$")               // Ok(true)
+"foobar".matches_str("^foo.*$")              // Ok(true)
 ```
