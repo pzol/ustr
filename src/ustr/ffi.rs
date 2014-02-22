@@ -1,5 +1,5 @@
-#[allow(ctypes, dead_code)];
 #[feature(globs)];
+#[allow(ctypes, non_camel_case_types)];
 
 use std::str;
 use std::libc::{ c_char };

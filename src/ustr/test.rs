@@ -3,6 +3,10 @@
 extern crate ustr;
 
 use ustr::*;
+mod ustring;
+mod ffi;
+mod regex;
+mod regex_test;
 
 static FOOBAR: &'static str = "föobär";
 
@@ -120,20 +124,20 @@ fn test_concat(){
 }
 
 #[test]
-fn test_split(){
+fn test_split_str(){
   let u = "foo bar".to_u();
-  let words = u.split(" ".to_u());
+  let words = u.split_str(" ".to_u());
   assert_eq!(words, ~["foo".to_u(), "bar".to_u()]);
 
   let u = "In a hill, there lives:   a hobbit".to_u();
-  let words = u.split(" ,:".to_u());
+  let words = u.split_str(" ,:".to_u());
   assert_eq!(words, (~["In", "a", "hill", "there", "lives", "a", "hobbit"]).map(|w| w.to_u()));
 }
 
 #[test]
 fn test_split_empty(){
   let u = "".to_u();
-  let words = u.split(" ".to_u());
+  let words = u.split_str(" ".to_u());
   assert_eq!(words, ~[]);
 }
 

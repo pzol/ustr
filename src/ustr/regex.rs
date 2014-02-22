@@ -1,7 +1,10 @@
-use super::{ UString, ToUString };
-use super::ffi::*;
+#[feature(globs)];
+use ustring::{ UString, ToUString };
+use ffi::*;
+mod ustring;
+mod ffi;
 
-trait Regex {
+pub trait Regex {
   fn matches(&self, pattern: &Self) -> Result<bool, UErrorCode>;
   fn matches_str(&self, pattern: &str) -> Result<bool, UErrorCode>;
   fn find(&self, pattern: &Self) -> Result<Match, UErrorCode>;
